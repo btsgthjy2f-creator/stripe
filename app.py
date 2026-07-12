@@ -538,13 +538,16 @@ def stripe_auth():
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         try:
-            async with aiohttp.ClientSession() as session:
-                result = loop.run_until_complete(processor.Auth(session))
-                bin_info = loop.run_until_complete(processor.CheckBin(session))
-                result['bin_info'] = bin_info
-                result['card'] = cc_string
-                result['card_masked'] = f"{cc[:6]}******{cc[-4:]}"
-                result['message'] = get_status_message(result.get('status', 'UNKNOWN'), True)
+            async def _run():
+                async with aiohttp.ClientSession() as session:
+                    result = await processor.Auth(session)
+                    bin_info = await processor.CheckBin(session)
+                    result['bin_info'] = bin_info
+                    result['card'] = cc_string
+                    result['card_masked'] = f"{cc[:6]}******{cc[-4:]}"
+                    result['message'] = get_status_message(result.get('status', 'UNKNOWN'), True)
+                    return result
+            result = loop.run_until_complete(_run())
         finally:
             loop.close()
         
@@ -591,13 +594,16 @@ def stripe_charge_get():
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         try:
-            async with aiohttp.ClientSession() as session:
-                result = loop.run_until_complete(processor.Charge(session, amount, currency, description))
-                bin_info = loop.run_until_complete(processor.CheckBin(session))
-                result['bin_info'] = bin_info
-                result['card'] = cc_string
-                result['card_masked'] = f"{cc[:6]}******{cc[-4:]}"
-                result['message'] = get_status_message(result.get('status', 'UNKNOWN'), False, amount)
+            async def _run():
+                async with aiohttp.ClientSession() as session:
+                    result = await processor.Charge(session, amount, currency, description)
+                    bin_info = await processor.CheckBin(session)
+                    result['bin_info'] = bin_info
+                    result['card'] = cc_string
+                    result['card_masked'] = f"{cc[:6]}******{cc[-4:]}"
+                    result['message'] = get_status_message(result.get('status', 'UNKNOWN'), False, amount)
+                    return result
+            result = loop.run_until_complete(_run())
         finally:
             loop.close()
         
@@ -648,13 +654,16 @@ def stripe_charge_post():
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         try:
-            async with aiohttp.ClientSession() as session:
-                result = loop.run_until_complete(processor.Charge(session, amount, currency, description))
-                bin_info = loop.run_until_complete(processor.CheckBin(session))
-                result['bin_info'] = bin_info
-                result['card'] = f"{cc}|{month}|{year}|{cvv}"
-                result['card_masked'] = f"{cc[:6]}******{cc[-4:]}"
-                result['message'] = get_status_message(result.get('status', 'UNKNOWN'), False, amount)
+            async def _run():
+                async with aiohttp.ClientSession() as session:
+                    result = await processor.Charge(session, amount, currency, description)
+                    bin_info = await processor.CheckBin(session)
+                    result['bin_info'] = bin_info
+                    result['card'] = f"{cc}|{month}|{year}|{cvv}"
+                    result['card_masked'] = f"{cc[:6]}******{cc[-4:]}"
+                    result['message'] = get_status_message(result.get('status', 'UNKNOWN'), False, amount)
+                    return result
+            result = loop.run_until_complete(_run())
         finally:
             loop.close()
         
@@ -701,24 +710,27 @@ def stripe_auth_and_charge_get():
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         try:
-            async with aiohttp.ClientSession() as session:
-                result = loop.run_until_complete(processor.AuthAndCharge(session, amount, currency, description))
-                bin_info = loop.run_until_complete(processor.CheckBin(session))
-                
-                # Add bin info and card details to result
-                if result.get('auth'):
-                    result['auth']['bin_info'] = bin_info
-                    result['auth']['card'] = cc_string
-                    result['auth']['card_masked'] = f"{cc[:6]}******{cc[-4:]}"
-                    result['auth']['message'] = get_status_message(result['auth'].get('status', 'UNKNOWN'), True)
-                
-                if result.get('charge'):
-                    result['charge']['bin_info'] = bin_info
-                    result['charge']['card'] = cc_string
-                    result['charge']['card_masked'] = f"{cc[:6]}******{cc[-4:]}"
-                    result['charge']['message'] = get_status_message(result['charge'].get('status', 'UNKNOWN'), False, amount)
-                
-                return jsonify(result)
+            async def _run():
+                async with aiohttp.ClientSession() as session:
+                    result = await processor.AuthAndCharge(session, amount, currency, description)
+                    bin_info = await processor.CheckBin(session)
+
+                    # Add bin info and card details to result
+                    if result.get('auth'):
+                        result['auth']['bin_info'] = bin_info
+                        result['auth']['card'] = cc_string
+                        result['auth']['card_masked'] = f"{cc[:6]}******{cc[-4:]}"
+                        result['auth']['message'] = get_status_message(result['auth'].get('status', 'UNKNOWN'), True)
+
+                    if result.get('charge'):
+                        result['charge']['bin_info'] = bin_info
+                        result['charge']['card'] = cc_string
+                        result['charge']['card_masked'] = f"{cc[:6]}******{cc[-4:]}"
+                        result['charge']['message'] = get_status_message(result['charge'].get('status', 'UNKNOWN'), False, amount)
+
+                    return result
+            result = loop.run_until_complete(_run())
+            return jsonify(result)
         finally:
             loop.close()
         
@@ -745,8 +757,10 @@ def stripe_bin_info():
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         try:
-            async with aiohttp.ClientSession() as session:
-                bin_info = loop.run_until_complete(processor.CheckBin(session))
+            async def _run():
+                async with aiohttp.ClientSession() as session:
+                    return await processor.CheckBin(session)
+            bin_info = loop.run_until_complete(_run())
         finally:
             loop.close()
         
