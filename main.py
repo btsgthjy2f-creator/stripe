@@ -21,7 +21,7 @@ class StripeProcessor:
         self.cvv = cvv
         self.zip = "10080"
         # SK key embedded directly
-        self.sk = "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"
+        self.sk = "pk_live_51LRxCKLhnMXMK9tmfEjBA6JJbmTDiuctk5X6lrZGBGcwfO5pZhmdlRbocwdRIKcaNdT6Pr6mefD3qxAOokMPZ0EA0050jzOTF3"
         self.bin = card[:6] if card else ""
 
     async def CheckBin(self, session):
